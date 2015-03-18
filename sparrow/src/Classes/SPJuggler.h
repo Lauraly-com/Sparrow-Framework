@@ -103,4 +103,7 @@
 /// For example, a speed factor of 2.0 means the juggler runs twice as fast.
 @property (nonatomic, assign) float speed;
 
+/// Determines if the juggler is empty.
+@property (nonatomic, readonly, getter=isEmpty) BOOL empty;
+
 @end

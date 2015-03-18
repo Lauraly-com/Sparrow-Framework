@@ -87,6 +87,15 @@
 /// Animates the `alpha` property.
 - (void)fadeTo:(float)alpha;
 
+/// Show the target when the tween starts
+- (void)show;
+
+/// Hide the target when the tween is complete
+- (void)hide;
+
+/// Remove the target from his parent when the tween is complete
+- (void)removeFromParent;
+
 /// ----------------
 /// @name Properties
 /// ----------------

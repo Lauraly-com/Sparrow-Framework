@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		02488C2A1AB8A12800912C73 /* SPGroup.h in Headers */ = {isa = PBXBuildFile; fileRef = 02488C281AB8A12800912C73 /* SPGroup.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		02488C2B1AB8A12800912C73 /* SPGroup.m in Sources */ = {isa = PBXBuildFile; fileRef = 02488C291AB8A12800912C73 /* SPGroup.m */; };
 		872F5C3D1880C9E30016071B /* SPFragmentFilter.h in Headers */ = {isa = PBXBuildFile; fileRef = 872F5C3B1880C9E30016071B /* SPFragmentFilter.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		872F5C3E1880C9E30016071B /* SPFragmentFilter.m in Sources */ = {isa = PBXBuildFile; fileRef = 872F5C3C1880C9E30016071B /* SPFragmentFilter.m */; };
 		872F5C471880E2B50016071B /* SPBlurFilter.h in Headers */ = {isa = PBXBuildFile; fileRef = 872F5C451880E2B50016071B /* SPBlurFilter.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -193,6 +195,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		02488C281AB8A12800912C73 /* SPGroup.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPGroup.h; sourceTree = "<group>"; };
+		02488C291AB8A12800912C73 /* SPGroup.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPGroup.m; sourceTree = "<group>"; };
 		1D30AB110D05D00D00671497 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		1DF5F4DF0D08C38300B7A737 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		28FD14FF0DC6FC520079059D /* OpenGLES.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGLES.framework; path = System/Library/Frameworks/OpenGLES.framework; sourceTree = SDKROOT; };
@@ -687,6 +691,8 @@
 				DED859440FB883EE00D3D7D2 /* SPTransitions.m */,
 				DE7044750FB62080007F5ECC /* SPTween.h */,
 				DE7044760FB62080007F5ECC /* SPTween.m */,
+				02488C281AB8A12800912C73 /* SPGroup.h */,
+				02488C291AB8A12800912C73 /* SPGroup.m */,
 			);
 			name = Animation;
 			sourceTree = "<group>";
@@ -806,6 +812,7 @@
 				DED29C0716DFB48E000C2BD7 /* SPEventListener.h in Headers */,
 				872F5C3D1880C9E30016071B /* SPFragmentFilter.h in Headers */,
 				DE61138D134F8FA600AB742E /* SPGLTexture.h in Headers */,
+				02488C2A1AB8A12800912C73 /* SPGroup.h in Headers */,
 				DE611388134F8F8300AB742E /* SPImage.h in Headers */,
 				DE611392134F8FBD00AB742E /* SPJuggler.h in Headers */,
 				DE611396134F8FBD00AB742E /* SPMacros.h in Headers */,
@@ -1039,6 +1046,7 @@
 				DE019C3A1026361200ECB0AC /* SPDelayedInvocation.m in Sources */,
 				DE019C3B1026363D00ECB0AC /* SPNSExtensions.m in Sources */,
 				872F5C541880E57A0016071B /* SPColorMatrix.m in Sources */,
+				02488C2B1AB8A12800912C73 /* SPGroup.m in Sources */,
 				DE019C3C1026364800ECB0AC /* SPJuggler.m in Sources */,
 				872F5C501880E2DD0016071B /* SPDisplacementMapFilter.m in Sources */,
 				872F5C66188236D80016071B /* SPContext.m in Sources */,

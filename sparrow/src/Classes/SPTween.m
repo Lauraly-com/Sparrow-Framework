@@ -17,6 +17,14 @@
 
 typedef float (*FnPtrTransition) (id, SEL, float);
 
+@protocol VisibleProtocol
+-(void)setVisible:(BOOL)visible;
+@end
+
+@protocol RemoveFromParentProtocol
+- (void)removeFromParent;
+@end
+
 @implementation SPTween
 {
     id _target;
@@ -32,6 +40,9 @@ typedef float (*FnPtrTransition) (id, SEL, float);
     double _repeatDelay;
     BOOL _reverse;
     int _currentCycle;
+	BOOL _show;
+	BOOL _hide;
+	BOOL _removeFromParent;
     
     SPCallbackBlock _onStart;
     SPCallbackBlock _onUpdate;
@@ -54,6 +65,9 @@ typedef float (*FnPtrTransition) (id, SEL, float);
         _repeatCount = 1;
         _currentCycle = -1;
         _reverse = NO;
+		_show = NO;
+		_hide = NO;
+		_removeFromParent = NO;
 
         // create function pointer for transition
         NSString *transMethod = [transition stringByAppendingString:TRANS_SUFFIX];
@@ -123,6 +137,21 @@ typedef float (*FnPtrTransition) (id, SEL, float);
     [self animateProperty:@"scaleY" targetValue:scale];
 }
 
+-(void)show
+{
+	_show = YES;
+}
+
+-(void)hide
+{
+	_hide = YES;
+}
+
+-(void)removeFromParent
+{
+	_removeFromParent = YES;
+}
+
 #pragma mark SPAnimatable
 
 - (void)advanceTime:(double)time
@@ -143,6 +172,8 @@ typedef float (*FnPtrTransition) (id, SEL, float);
     if (isStarting)
     {
         _currentCycle++;
+		if(_show && [_target respondsToSelector:@selector(setVisible:)])
+			[(id<VisibleProtocol>)_target setVisible:YES];
         if (_onStart) _onStart();
     }
 
@@ -172,6 +203,10 @@ typedef float (*FnPtrTransition) (id, SEL, float);
         }
         else
         {
+			if(_hide && [_target respondsToSelector:@selector(setVisible:)])
+				[(id<VisibleProtocol>)_target setVisible:NO];
+			if(_removeFromParent && [_target respondsToSelector:@selector(removeFromParent)])
+				[(id<RemoveFromParentProtocol>)_target removeFromParent];
             [self dispatchEventWithType:SPEventTypeRemoveFromJuggler];
             if (_onComplete) _onComplete();
         }

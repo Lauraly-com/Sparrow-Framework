@@ -35,6 +35,7 @@
 #import <Sparrow/SPEvent.h>
 #import <Sparrow/SPEventDispatcher.h>
 #import <Sparrow/SPGLTexture.h>
+#import <Sparrow/SPGroup.h>
 #import <Sparrow/SPJuggler.h>
 #import <Sparrow/SPImage.h>
 #import <Sparrow/SPMacros.h>

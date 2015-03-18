@@ -115,6 +115,11 @@
     return [_objects containsObject:object];
 }
 
+-(BOOL)isEmpty
+{
+	return [_objects count] == 0;
+}
+
 - (id)delayInvocationAtTarget:(id)target byTime:(double)time
 {
     SPDelayedInvocation *delayedInv = [SPDelayedInvocation invocationWithTarget:target delay:time];
