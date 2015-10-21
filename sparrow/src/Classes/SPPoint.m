@@ -3,14 +3,14 @@
 //  Sparrow
 //
 //  Created by Daniel Sperl on 23.03.09.
-//  Copyright 2011-2014 Gamua. All rights reserved.
+//  Copyright 2011-2015 Gamua. All rights reserved.
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the Simplified BSD License.
 //
 
-#import <Sparrow/SPMacros.h>
-#import <Sparrow/SPPoint.h>
+#import "SPMacros.h"
+#import "SPPoint.h"
 
 // --- class implementation ------------------------------------------------------------------------
 
@@ -118,8 +118,8 @@
     else if (!point) return NO;
     else
     {
-        return SP_IS_FLOAT_EQUAL(_x, point->_x) &&
-               SP_IS_FLOAT_EQUAL(_y, point->_y);
+        return SPIsFloatEqual(_x, point->_x) &&
+               SPIsFloatEqual(_y, point->_y);
     }
 }
 
@@ -142,7 +142,7 @@
 
 + (float)distanceFromPoint:(SPPoint *)p1 toPoint:(SPPoint *)p2
 {
-    return sqrtf(SP_SQUARE(p2->_x - p1->_x) + SP_SQUARE(p2->_y - p1->_y));
+    return sqrtf(SPSquare(p2->_x - p1->_x) + SPSquare(p2->_y - p1->_y));
 }
 
 + (SPPoint *)interpolateFromPoint:(SPPoint *)p1 toPoint:(SPPoint *)p2 ratio:(float)ratio
@@ -184,26 +184,21 @@
 
 #pragma mark NSCopying
 
-- (instancetype)copy
-{
-    return [[[self class] alloc] initWithX:_x y:_y];
-}
-
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-    return [self copy];
+    return [[[self class] alloc] initWithX:_x y:_y];
 }
 
 #pragma mark Properties
 
 - (float)length
 {
-    return sqrtf(SP_SQUARE(_x) + SP_SQUARE(_y));
+    return sqrtf(SPSquare(_x) + SPSquare(_y));
 }
 
 - (float)lengthSquared
 {
-    return SP_SQUARE(_x) + SP_SQUARE(_y);
+    return SPSquare(_x) + SPSquare(_y);
 }
 
 - (float)angle

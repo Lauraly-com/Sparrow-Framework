@@ -3,21 +3,21 @@
 //  Sparrow
 //
 //  Created by Daniel Sperl on 27.06.09.
-//  Copyright 2011-2014 Gamua. All rights reserved.
+//  Copyright 2011-2015 Gamua. All rights reserved.
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the Simplified BSD License.
 //
 
-#import <Sparrow/SparrowClass.h>
-#import <Sparrow/SPGLTexture.h>
-#import <Sparrow/SPMacros.h>
-#import <Sparrow/SPNSExtensions.h>
-#import <Sparrow/SPRectangle.h>
-#import <Sparrow/SPSubTexture.h>
-#import <Sparrow/SPTexture.h>
-#import <Sparrow/SPTextureAtlas.h>
-#import <Sparrow/SPUtils.h>
+#import "SparrowClass.h"
+#import "SPGLTexture.h"
+#import "SPMacros.h"
+#import "SPNSExtensions.h"
+#import "SPRectangle.h"
+#import "SPSubTexture.h"
+#import "SPTexture.h"
+#import "SPTextureAtlas.h"
+#import "SPUtils.h"
 
 // --- helper class --------------------------------------------------------------------------------
 
@@ -65,7 +65,7 @@
 @implementation SPTextureAtlas
 {
     SPTexture *_atlasTexture;
-    NSMutableDictionary *_textureInfos;
+    SP_GENERIC(NSMutableDictionary, NSString*, SPTextureInfo*) *_textureInfos;
 }
 
 @synthesize texture = _atlasTexture;
@@ -143,7 +143,7 @@
 {
     NSArray *names = [self namesStartingWith:prefix];
     
-    NSMutableArray *textures = [NSMutableArray arrayWithCapacity:names.count];
+    SP_GENERIC(NSMutableArray, SPTexture*) *textures = [NSMutableArray arrayWithCapacity:names.count];
     for (NSString *textureName in names)
         [textures addObject:[self textureByName:textureName]];
     
@@ -152,7 +152,7 @@
 
 - (NSArray *)namesStartingWith:(NSString *)prefix
 {
-    NSMutableArray *names = [NSMutableArray array];
+    SP_GENERIC(NSMutableArray, NSString*) *names = [NSMutableArray array];
     
     if (prefix)
     {
@@ -192,17 +192,17 @@
 
 #pragma mark Properties
 
-- (int)numTextures
+- (NSInteger)numTextures
 {
-    return (int)[_textureInfos count];
+    return [_textureInfos count];
 }
 
-- (NSArray *)names
+- (SP_GENERIC(NSArray, NSString*) *)names
 {
     return [self namesStartingWith:nil];
 }
 
-- (NSArray *)textures
+- (SP_GENERIC(NSArray, SPTexture*) *)textures
 {
     return [self texturesStartingWith:nil];
 }
@@ -254,7 +254,7 @@
             _atlasTexture = [[SPTexture alloc] initWithContentsOfFile:texturePath];
         }
     }];
-
+    
     [parser release];
     
     if (!success)

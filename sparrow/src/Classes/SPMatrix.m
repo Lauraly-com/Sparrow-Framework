@@ -3,15 +3,16 @@
 //  Sparrow
 //
 //  Created by Daniel Sperl on 26.03.09.
-//  Copyright 2011-2014 Gamua. All rights reserved.
+//  Copyright 2011-2015 Gamua. All rights reserved.
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the Simplified BSD License.
 //
 
-#import <Sparrow/SPMacros.h>
-#import <Sparrow/SPMatrix.h>
-#import <Sparrow/SPPoint.h>
+#import "SPMacros.h"
+#import "SPMatrix.h"
+#import "SPMatrix3D.h"
+#import "SPPoint.h"
 
 // --- class implementation ------------------------------------------------------------------------
 
@@ -86,9 +87,9 @@ static inline void setValues(SPMatrix *matrix, float a, float b, float c, float 
     else if (!matrix) return NO;
     else
     {
-        return SP_IS_FLOAT_EQUAL(_a, matrix->_a) && SP_IS_FLOAT_EQUAL(_b, matrix->_b) &&
-               SP_IS_FLOAT_EQUAL(_c, matrix->_c) && SP_IS_FLOAT_EQUAL(_d, matrix->_d) &&
-               SP_IS_FLOAT_EQUAL(_tx, matrix->_tx) && SP_IS_FLOAT_EQUAL(_ty, matrix->_ty);
+        return SPIsFloatEqual(_a, matrix->_a) && SPIsFloatEqual(_b, matrix->_b) &&
+               SPIsFloatEqual(_c, matrix->_c) && SPIsFloatEqual(_d, matrix->_d) &&
+               SPIsFloatEqual(_tx, matrix->_tx) && SPIsFloatEqual(_ty, matrix->_ty);
     }
 }
 
@@ -183,6 +184,19 @@ static inline void setValues(SPMatrix *matrix, float a, float b, float c, float 
     memcpy(&_a, &matrix->_a, sizeof(float) * 6);
 }
 
+- (SPMatrix3D *)convertTo3D
+{
+    matrix_float4x4 matrix = matrix_identity_float4x4;
+    matrix.columns[0][0] = _a;
+    matrix.columns[0][1] = _b;
+    matrix.columns[1][0] = _c;
+    matrix.columns[1][1] = _d;
+    matrix.columns[3][0] = _tx;
+    matrix.columns[3][1] = _ty;
+    
+    return [SPMatrix3D matrix3DWithMatrix4x4:matrix];
+}
+
 - (GLKMatrix4)convertToGLKMatrix4
 {
     GLKMatrix4 matrix = GLKMatrix4Identity;
@@ -238,14 +252,9 @@ static inline void setValues(SPMatrix *matrix, float a, float b, float c, float 
 
 #pragma mark NSCopying
 
-- (instancetype)copy
-{
-    return [[[self class] alloc] initWithA:_a b:_b c:_c d:_d tx:_tx ty:_ty];
-}
-
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-    return [self copy];
+    return [[[self class] alloc] initWithA:_a b:_b c:_c d:_d tx:_tx ty:_ty];
 }
 
 #pragma mark Properties

@@ -3,16 +3,18 @@
 //  Sparrow
 //
 //  Created by Robert Carone on 10/8/13.
-//  Copyright 2011-2014 Gamua. All rights reserved.
+//  Copyright 2011-2015 Gamua. All rights reserved.
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the Simplified BSD License.
 //
 
-#import <OpenGLES/ES2/gl.h>
-#import <OpenGLES/ES2/glext.h>
-
+#import <Sparrow/SparrowBase.h>
 #import <Sparrow/SPMacros.h>
+
+#import <OpenGLES/ES2/glext.h>
+#import <OpenGLES/ES3/gl.h>
+#import <OpenGLES/ES3/glext.h>
 
 // -----------------------------------------------------------
 // EXPERIMENTAL FEATURE: Activate the OpenGL state cache here!
@@ -44,7 +46,8 @@ SP_EXTERN void sglStateCacheSetCurrent(SGLStateCacheRef stateCache);
 /// Returns a string representing an OpenGL error code.
 SP_EXTERN const char* sglGetErrorString(uint error);
 
-/// Extension remappings
+/// extension remappings
+
 #if GL_OES_vertex_array_object
     #undef GL_VERTEX_ARRAY_BINDING
 
@@ -55,7 +58,33 @@ SP_EXTERN const char* sglGetErrorString(uint error);
     #define glIsVertexArray             glIsVertexArrayOES
 #endif
 
-/// OpenGL remappings
+/// debug utils
+
+#define SP_FORCE_DEBUG_MARKERS 0
+
+#if DEBUG || SP_FORCE_DEBUG_MARKERS
+    #define SPPushDebugMarker(s) \
+        glPushGroupMarkerEXT(0, s)
+
+    #define SPPopDebugMarker() \
+        glPopGroupMarkerEXT()
+
+    #define SPExecuteWithDebugMarker(s) \
+        for (BOOL SP_CONCAT(_SP_DEBUG_MRK, __LINE__) = _SPStartDebugMarker(s); \
+             SP_CONCAT(_SP_DEBUG_MRK, __LINE__); \
+             SP_CONCAT(_SP_DEBUG_MRK, __LINE__) = _SPEndDebugMarker())
+
+    SP_INLINE BOOL _SPStartDebugMarker(const char *s) { glPushGroupMarkerEXT(0, s); return YES; }
+    SP_INLINE BOOL _SPEndDebugMarker() { glPopGroupMarkerEXT(); return NO; }
+
+#else // !DEBUG
+    #define SPPushDebugMarker(s)
+    #define SPPopDebugMarker()
+    #define SPExecuteWithDebugMarker(s)
+#endif
+
+/// state cache remappings
+
 #if SP_ENABLE_GL_STATE_CACHE
     #undef  glBindVertexArray
     #undef  glDeleteVertexArrays

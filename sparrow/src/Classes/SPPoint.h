@@ -3,15 +3,16 @@
 //  Sparrow
 //
 //  Created by Daniel Sperl on 23.03.09.
-//  Copyright 2011-2014 Gamua. All rights reserved.
+//  Copyright 2011-2015 Gamua. All rights reserved.
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the Simplified BSD License.
 //
 
-#import <Foundation/Foundation.h>
-#import <GLKit/GLKMath.h>
+#import <Sparrow/SparrowBase.h>
 #import <Sparrow/SPPoolObject.h>
+
+NS_ASSUME_NONNULL_BEGIN
 
 /** The SPPoint class describes a two dimensional point or vector. */
 
@@ -116,3 +117,5 @@
 @property (readonly) BOOL isOrigin;
 
 @end
+
+NS_ASSUME_NONNULL_END

@@ -3,15 +3,19 @@
 //  Sparrow
 //
 //  Created by Daniel Sperl on 09.05.09.
-//  Copyright 2011-2014 Gamua. All rights reserved.
+//  Copyright 2011-2015 Gamua. All rights reserved.
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the Simplified BSD License.
 //
 
-#import <Foundation/Foundation.h>
+#import <Sparrow/SparrowBase.h>
 #import <Sparrow/SPAnimatable.h>
 #import <Sparrow/SPMacros.h>
+
+NS_ASSUME_NONNULL_BEGIN
+
+@class SPTween;
 
 /** ------------------------------------------------------------------------------------------------
 
@@ -53,6 +57,10 @@
 ------------------------------------------------------------------------------------------------- */
 
 @interface SPJuggler : NSObject <SPAnimatable>
+{
+  @protected
+    SP_GENERIC(NSMutableOrderedSet, id<SPAnimatable>) *_objects;
+}
 
 /// --------------------
 /// @name Initialization
@@ -85,12 +93,16 @@
 /// instead. Execution will be delayed until `time` has passed.
 - (id)delayInvocationAtTarget:(id)target byTime:(double)time;
 
+/// Runs a function at a specified interval (in seconds). A 'repeatCount' of zero means that it
+/// runs indefinitely.
+- (id)repeatInvocationAtTarget:(id)target interval:(double)interval repeatCount:(NSInteger)repeatCount;
+
 /// Delays the execution of a block by a certain time in seconds.
 - (id)delayInvocationByTime:(double)time block:(SPCallbackBlock)block;
 
 /// Creates a tween to animate the target over 'time' seconds. This method provides a convenient
 /// alternative for creating and adding a tween manually.
-- (id)tweenWithTarget:(id)target time:(double)time properties:(NSDictionary *)properties;
+- (SPTween *)tweenWithTarget:(id)target time:(double)time properties:(SP_GENERIC(NSDictionary, NSString*,id) *)properties;
 
 /// ----------------
 /// @name Properties
@@ -107,3 +119,5 @@
 @property (nonatomic, readonly, getter=isEmpty) BOOL empty;
 
 @end
+
+NS_ASSUME_NONNULL_END
