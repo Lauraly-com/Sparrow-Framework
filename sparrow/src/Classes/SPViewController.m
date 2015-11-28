@@ -15,6 +15,7 @@
 #import "SPMatrix.h"
 #import "SPOpenGL.h"
 #import "SPJuggler.h"
+#import "SPOverlayView.h"
 #import "SPPoint.h"
 #import "SPPress_Internal.h"
 #import "SPPressEvent.h"
@@ -54,6 +55,8 @@
     
     SPRectangle *_viewPort;
     SPRectangle *_previousViewPort;
+    SPResizeEvent *_resizeEvent;
+    SPOverlayView *_overlayView;
     
     CADisplayLink *_displayLink;
     dispatch_queue_t _resourceQueue;
@@ -64,8 +67,10 @@
     NSInteger _frameInterval;
     double _lastFrameTimestamp;
     double _lastTouchTimestamp;
+    double _rotationDuration;
     float _contentScaleFactor;
     float _viewScaleFactor;
+    BOOL _isPad;
     BOOL _hasRenderedOnce;
     BOOL _supportHighResolutions;
     BOOL _doubleOnPad;
@@ -130,7 +135,8 @@
 
 - (void)setup
 {
-    _contentScaleFactor = 1.0f;
+    _contentScaleFactor = 1.0;
+    _isPad = ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad);
     _stage = [[SPStage alloc] init];
     _juggler = [[SPJuggler alloc] init];
     _touchProcessor = [[SPTouchProcessor alloc] initWithStage:_stage];
@@ -165,6 +171,8 @@
             self.showStats = _showStats;
         }
         else SPLog(@"Could not create render context.");
+        
+        [self updateViewPort:YES];
     }
 }
 
@@ -195,9 +203,38 @@
     if (forceUpdate || ![_previousViewPort isEqualToRectangle:_viewPort])
     {
         [_previousViewPort copyFromRectangle:_viewPort];
+        
         [_context configureBackBufferForDrawable:_internalView.layer antiAlias:_antiAliasing
                            enableDepthAndStencil:YES wantsBestResolution:_supportHighResolutions];
+        
+        [self calculateContentScaleFactor];
+        
+        if (_hasRenderedOnce)
+        {
+            float newWidth  = _viewPort.width  * _viewScaleFactor / _contentScaleFactor;
+            float newHeight = _viewPort.height * _viewScaleFactor / _contentScaleFactor;
+            
+            if (_stage.width  != newWidth || _stage.height != newHeight)
+            {
+                SPEvent *resizeEvent = [[SPResizeEvent alloc] initWithType:SPEventTypeResize
+                                        width:newWidth height:newHeight];
+                [_stage broadcastEvent:resizeEvent];
+            }
+        }
     }
+}
+
+- (void)calculateContentScaleFactor
+{
+    _viewScaleFactor = _internalView.contentScaleFactor;
+    _contentScaleFactor = (_doubleOnPad && _isPad) ? _viewScaleFactor * 2.0f : _viewScaleFactor;
+}
+
+- (void)readjustStageSize
+{
+    CGSize viewSize = self.view.bounds.size;
+    _stage.width  = viewSize.width  * _viewScaleFactor / _contentScaleFactor;
+    _stage.height = viewSize.height * _viewScaleFactor / _contentScaleFactor;
 }
 
 #pragma mark Notifications
@@ -234,17 +271,16 @@
     if (_rootClass)
         [NSException raise:SPExceptionInvalidOperation
                     format:@"Sparrow has already been started"];
-
-    BOOL isPad = ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad);
     
     _rootClass = rootClass;
     _supportHighResolutions = hd;
     _doubleOnPad = doubleOnPad;
-    _viewScaleFactor = _supportHighResolutions ? [[UIScreen mainScreen] scale] : 1.0f;
-    _contentScaleFactor = (_doubleOnPad && isPad) ? _viewScaleFactor * 2.0f : _viewScaleFactor;
     
+    self.view.contentScaleFactor = _supportHighResolutions ? [[UIScreen mainScreen] scale] : 1.0f;
     self.paused = NO;
     self.rendering = YES;
+    
+    [self calculateContentScaleFactor];
 }
 
 - (void)nextFrame
@@ -281,17 +317,29 @@
     
     @autoreleasepool
     {
+        // only keep the overlay view in the subview tree if it's being used
+        if (!_overlayView.subviews)
+            [_overlayView removeFromSuperview];
+        else if (!_overlayView.superview)
+            [_internalView insertSubview:_overlayView atIndex:0];
+        
         if ([_context makeCurrentContext])
         {
             [self makeCurrent];
             [self updateViewPort:NO];
-            if (!_root) [self createRoot];
             
-            [_context setRenderToBackBuffer];
+            if (!_root)
+            {
+                [self readjustStageSize];
+                [self createRoot];
+            }
             
             SPExecuteWithDebugMarker("Sparrow")
             {
                 [_stage dispatchEventWithType:SPEventTypeRender];
+                
+                float scaleX = _viewPort.width  / _stage.width;
+                float scaleY = _viewPort.height / _stage.height;
                 
                 glDisable(GL_CULL_FACE);
                 glDepthMask(GL_FALSE);
@@ -300,6 +348,15 @@
                 [_support nextFrame];
                 [_support setStencilReferenceValue:0];
                 [_support setRenderTarget:nil];
+                [_support setProjectionMatrixWithX:_viewPort.x < 0 ? -_viewPort.x / scaleX : 0.0
+                                                 y:_viewPort.y < 0 ? -_viewPort.y / scaleX : 0.0
+                                             width:_viewPort.width  / scaleX
+                                            height:_viewPort.height / scaleY
+                                        stageWidth:_stage.width
+                                       stageHeight:_stage.height
+                                         cameraPos:_stage.cameraPosition];
+                
+                [_support clearWithColor:_stage.color alpha:1.0];
                 [_stage render:_support];
                 [_support finishQuadBatch];
                 
@@ -311,8 +368,10 @@
             [SPRenderSupport checkForOpenGLError];
           #endif
             
-            [_context present];
+            if (!_hasRenderedOnce) glFinish();
             _hasRenderedOnce = YES;
+            
+            [_context present];
         }
         else SPLog(@"WARNING: Unable to set the current rendering context.");
     }
@@ -389,11 +448,25 @@
     _internalView.viewController = self;
     _internalView.opaque = YES;
     _internalView.clearsContextBeforeDrawing = NO;
-#if !TARGET_OS_TV
+  #if !TARGET_OS_TV
     _internalView.multipleTouchEnabled = YES;
-#endif
+  #endif
     
     [_viewPort setEmpty]; // reset viewport
+}
+
+- (void)viewDidLoad
+{
+    if (!_overlayView)
+    {
+        _overlayView = [[[SPOverlayView alloc] initWithFrame:_internalView.frame] autorelease];
+        _overlayView.opaque = NO;
+        _overlayView.contentScaleFactor = _internalView.contentScaleFactor;
+        _overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    }
+    
+    [_overlayView removeFromSuperview];
+    [_internalView insertSubview:_overlayView atIndex:0];
 }
 
 - (void)didReceiveMemoryWarning
@@ -406,6 +479,7 @@
 
 #pragma mark Presses
 
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 90000
 - (void)pressesBegan:(NSSet<UIPress*> *)presses withEvent:(UIPressesEvent *)event
 {
     [self proccessPressEvent:event];
@@ -444,6 +518,7 @@
         }
     }
 }
+#endif
 
 #pragma mark Touch Processing
 
@@ -474,7 +549,7 @@
     {
         @autoreleasepool
         {
-            CGSize viewSize = _internalView.bounds.size;
+            CGSize viewSize = self.view.bounds.size;
             float xConversion = _stage.width / viewSize.width;
             float yConversion = _stage.height / viewSize.height;
             
@@ -554,7 +629,15 @@
     float newHeight = isPortrait ? MAX(_stage.width, _stage.height) :
                                    MIN(_stage.width, _stage.height);
     
-    [self viewDidResize:CGRectMake(0, 0, newWidth, newHeight) duration:duration];
+    if (newWidth != _stage.width)
+    {
+        _stage.width  = newWidth;
+        _stage.height = newHeight;
+        
+        SPEvent *resizeEvent = [[SPResizeEvent alloc] initWithType:SPEventTypeResize
+                                width:newWidth height:newHeight animationTime:duration];
+        [_stage broadcastEvent:resizeEvent];
+    }
 }
 
 #pragma mark Properties
@@ -586,17 +669,27 @@
     }
 }
 
-#if !TARGET_OS_TV
+- (void)setViewPort:(SPRectangle *)viewPort
+{
+    _internalView.frame = viewPort.convertToCGRect;
+    [_viewPort copyFromRectangle:viewPort];
+}
+
 - (void)setMultitouchEnabled:(BOOL)multitouchEnabled
 {
+  #if !TARGET_OS_TV
     _internalView.multipleTouchEnabled = multitouchEnabled;
+  #endif
 }
 
 - (BOOL)multitouchEnabled
 {
+  #if !TARGET_OS_TV
     return _internalView.multipleTouchEnabled;
+  #else
+    return NO;
+  #endif
 }
-#endif
 
 - (void)setShowStats:(BOOL)showStats
 {
@@ -674,33 +767,60 @@
 
 #pragma mark Internal
 
-- (void)viewDidResize:(CGRect)bounds
+- (void)viewDidResize:(CGRect)frame
 {
-    [self viewDidResize:bounds duration:0];
+    [_viewPort copyFromRectangle:[SPRectangle rectangleWithCGRect:frame]];
 }
 
-- (void)viewDidResize:(CGRect)bounds duration:(double)duration
+@end
+
+
+#pragma mark - UIKitHelpers
+
+@implementation SPViewController (UIKitHelpers)
+
+- (CGPoint)convertPoint:(SPPoint *)point toView:(UIView *)view
 {
-    float newWidth  = bounds.size.width;
-    float newHeight = bounds.size.height;
-    
-    if (newWidth  != _stage.width ||
-        newHeight != _stage.height)
-    {
-        _stage.width  = newWidth  * _viewScaleFactor / _contentScaleFactor;
-        _stage.height = newHeight * _viewScaleFactor / _contentScaleFactor;
-        
-        if (_hasRenderedOnce)
-        {
-            SPEvent *resizeEvent = [[SPResizeEvent alloc] initWithType:SPEventTypeResize
-                                     width:newWidth height:newHeight animationTime:duration];
-            [_stage broadcastEvent:resizeEvent];
-            [resizeEvent release];
-        }
-    }
-    
-    [_viewPort copyFromRectangle:
-     [SPRectangle rectangleWithX:0 y:0 width:_stage.width height:_stage.height]];
+    float toUIKitScaleFactor = self.toUIKitConversionFactor;
+    CGPoint globalPoint = CGPointMake(point.x * toUIKitScaleFactor, point.y * toUIKitScaleFactor);
+    return [_internalView convertPoint:globalPoint toView:view];
+}
+
+- (SPPoint *)convertPoint:(CGPoint)point fromView:(UIView *)view
+{
+    float toSarrowScaleFactor = self.fromUIKitConversionFactor;
+    CGPoint globalPoint = [_internalView convertPoint:point fromView:view];
+    return [SPPoint pointWithX:globalPoint.x * toSarrowScaleFactor y: globalPoint.y * toSarrowScaleFactor];
+}
+
+- (CGRect)convertRectangle:(SPRectangle *)rectangle toView:(UIView *)view
+{
+    float toUIKitScaleFactor = self.toUIKitConversionFactor;
+    CGRect globalRect = CGRectMake(rectangle.x * toUIKitScaleFactor, rectangle.y * toUIKitScaleFactor,
+                                   rectangle.width * toUIKitScaleFactor, rectangle.height * toUIKitScaleFactor);
+    return [_internalView convertRect:globalRect toView:view];
+}
+
+- (SPRectangle *)convertRectangle:(CGRect)rect fromView:(UIView *)view
+{
+    float toSarrowScaleFactor = self.fromUIKitConversionFactor;
+    CGRect globalRect = [_internalView convertRect:rect fromView:view];
+    return [SPRectangle rectangleWithX:globalRect.origin.x    * toSarrowScaleFactor
+                                     y:globalRect.origin.y    * toSarrowScaleFactor
+                                 width:globalRect.size.width  * toSarrowScaleFactor
+                                height:globalRect.size.height * toSarrowScaleFactor];
+}
+
+- (float)toUIKitConversionFactor
+{
+    CGSize viewSize = _internalView.bounds.size;
+    return viewSize.width / _stage.width;
+}
+
+- (float)fromUIKitConversionFactor
+{
+    CGSize viewSize = _internalView.bounds.size;
+    return _stage.width / viewSize.width;
 }
 
 @end
